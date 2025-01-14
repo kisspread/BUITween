@@ -1,54 +1,59 @@
 #pragma once
 
 #include "BUIEasing.h"
+#include "BUITweenTypes.h"
 #include "Components/Widget.h"
 #include "BUITweenInstance.generated.h"
 
-DECLARE_DELEGATE_OneParam( FBUITweenSignature, UWidget* /*Owner*/ );
+DECLARE_DELEGATE_OneParam(FBUITweenSignature, UWidget* /*Owner*/);
 
 BUITWEEN_API DECLARE_LOG_CATEGORY_EXTERN(LogBUITween, Log, All);
 
-template<typename T>
+template <typename T>
 class TBUITweenProp
 {
 public:
 	bool bHasStart = false;
 	bool bHasTarget = false;
-	inline bool IsSet() const { return bHasStart || bHasTarget; }
+	bool IsSet() const { return bHasStart || bHasTarget; }
 	T StartValue;
 	T TargetValue;
 	T CurrentValue;
 	bool bIsFirstTime = true;
-	void SetStart( T InStart )
+
+	void SetStart(T InStart)
 	{
 		bHasStart = true;
 		StartValue = InStart;
 		CurrentValue = StartValue;
 	}
-	void SetTarget( T InTarget )
+
+	void SetTarget(T InTarget)
 	{
 		bHasTarget = true;
 		TargetValue = InTarget;
 	}
-	void OnBegin( T InCurrentValue )
+
+	void OnBegin(T InCurrentValue)
 	{
-		if ( !bHasStart )
+		if (!bHasStart)
 		{
 			StartValue = InCurrentValue;
 			CurrentValue = InCurrentValue;
 		}
 	}
-	bool Update( float Alpha )
+
+	bool Update(float Alpha)
 	{
 		const T OldValue = CurrentValue;
-		CurrentValue = FMath::Lerp<T>( StartValue, TargetValue, Alpha );
+		CurrentValue = FMath::Lerp<T>(StartValue, TargetValue, Alpha);
 		const bool bShouldUpdate = bIsFirstTime || CurrentValue != OldValue;
 		bIsFirstTime = false;
 		return bShouldUpdate;
 	}
 };
 
-template<typename T>
+template <typename T>
 class TBUITweenInstantProp
 {
 public:
@@ -59,29 +64,33 @@ public:
 	T TargetValue;
 	T CurrentValue;
 	bool bIsFirstTime = true;
-	void SetStart( T InStart )
+
+	void SetStart(T InStart)
 	{
 		bHasStart = true;
 		StartValue = InStart;
 		CurrentValue = StartValue;
 	}
-	void SetTarget( T InTarget )
+
+	void SetTarget(T InTarget)
 	{
 		bHasTarget = true;
 		TargetValue = InTarget;
 	}
-	void OnBegin( T InCurrentValue )
+
+	void OnBegin(T InCurrentValue)
 	{
-		if ( !bHasStart )
+		if (!bHasStart)
 		{
 			StartValue = InCurrentValue;
 			CurrentValue = InCurrentValue;
 		}
 	}
-	bool Update( float Alpha )
+
+	bool Update(float Alpha)
 	{
 		const T OldValue = CurrentValue;
-		if ( Alpha >= 1 && bHasTarget )
+		if (Alpha >= 1 && bHasTarget)
 		{
 			CurrentValue = TargetValue;
 		}
@@ -102,149 +111,165 @@ struct BUITWEEN_API FBUITweenInstance
 	GENERATED_BODY()
 
 public:
-	FBUITweenInstance() { }
-	FBUITweenInstance( UWidget* pInWidget, float InDuration, float InDelay = 0 )
-		: pWidget( pInWidget )
-		, Duration( InDuration )
-		, Delay( InDelay )
+	FBUITweenInstance()
 	{
-		ensure( pInWidget != nullptr );
-
 	}
-	void Begin();
-	void Update( float InDeltaTime );
-	void Apply( float EasedAlpha );
 
-	inline bool operator==( const FBUITweenInstance& other) const
+	FBUITweenInstance(UWidget* pInWidget, float InDuration, float InDelay = 0)
+		: pWidget(pInWidget)
+		  , Duration(InDuration)
+		  , Delay(InDelay)
+	{
+		ensure(pInWidget != nullptr);
+	}
+
+	void Begin();
+	void Update(float InDeltaTime);
+	void Apply(float EasedAlpha);
+
+	inline bool operator==(const FBUITweenInstance& other) const
 	{
 		return pWidget == other.pWidget;
 	}
+
 	bool IsComplete() const { return bIsComplete; }
 
 	// EasingParam is used for easing functions that have a second parameter, like Elastic
-	FBUITweenInstance& Easing( EBUIEasingType InType, TOptional<float> InEasingParam = TOptional<float>() )
+	FBUITweenInstance& Easing(const EBUIEasingType InType, const TOptional<float>& InEasingParam = TOptional<float>())
 	{
 		EasingType = InType;
 		EasingParam = InEasingParam;
 		return *this;
 	}
 
-	FBUITweenInstance& ToTranslation( const FVector2D& InTarget )
+	FBUITweenInstance& ToTranslation(const FVector2D& InTarget)
 	{
-		TranslationProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& ToTranslation( float X, float Y )
-	{
-		TranslationProp.SetTarget( FVector2D( X, Y ) );
-		return *this;
-	}
-	FBUITweenInstance& FromTranslation( const FVector2D& InStart )
-	{
-		TranslationProp.SetStart( InStart );
-		return *this;
-	}
-	FBUITweenInstance& FromTranslation( float X, float Y )
-	{
-		TranslationProp.SetStart( FVector2D( X, Y ) );
+		TranslationProp.SetTarget(InTarget);
 		return *this;
 	}
 
-	FBUITweenInstance& ToScale( const FVector2D& InTarget )
+	FBUITweenInstance& ToTranslation(float X, float Y)
 	{
-		ScaleProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& FromScale( const FVector2D& InStart )
-	{
-		ScaleProp.SetStart( InStart );
+		TranslationProp.SetTarget(FVector2D(X, Y));
 		return *this;
 	}
 
-	FBUITweenInstance& ToOpacity( float InTarget )
+	FBUITweenInstance& FromTranslation(const FVector2D& InStart)
 	{
-		OpacityProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& FromOpacity( float InStart )
-	{
-		OpacityProp.SetStart( InStart );
+		TranslationProp.SetStart(InStart);
 		return *this;
 	}
 
-	FBUITweenInstance& ToColor( const FLinearColor& InTarget )
+	FBUITweenInstance& FromTranslation(float X, float Y)
 	{
-		ColorProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& FromColor( const FLinearColor& InStart )
-	{
-		ColorProp.SetStart( InStart );
+		TranslationProp.SetStart(FVector2D(X, Y));
 		return *this;
 	}
 
-	FBUITweenInstance& ToRotation( float InTarget )
+	FBUITweenInstance& ToScale(const FVector2D& InTarget)
 	{
-		RotationProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& FromRotation( float InStart )
-	{
-		RotationProp.SetStart( InStart );
+		ScaleProp.SetTarget(InTarget);
 		return *this;
 	}
 
-	FBUITweenInstance& ToMaxDesiredHeight( float InTarget )
+	FBUITweenInstance& FromScale(const FVector2D& InStart)
 	{
-		MaxDesiredHeightProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& FromMaxDesiredHeight( float InStart )
-	{
-		MaxDesiredHeightProp.SetStart( InStart );
+		ScaleProp.SetStart(InStart);
 		return *this;
 	}
 
-	FBUITweenInstance& ToCanvasPosition( FVector2D InTarget )
+	FBUITweenInstance& ToOpacity(float InTarget)
 	{
-		CanvasPositionProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& FromCanvasPosition( FVector2D InStart )
-	{
-		CanvasPositionProp.SetStart( InStart );
+		OpacityProp.SetTarget(InTarget);
 		return *this;
 	}
 
-	FBUITweenInstance& ToPadding( const FMargin& InTarget )
+	FBUITweenInstance& FromOpacity(float InStart)
 	{
-		PaddingProp.SetTarget( FVector4( InTarget.Left, InTarget.Top, InTarget.Right, InTarget.Bottom ) );
+		OpacityProp.SetStart(InStart);
 		return *this;
 	}
-	FBUITweenInstance& FromPadding( const FMargin& InStart )
+
+	FBUITweenInstance& ToColor(const FLinearColor& InTarget)
 	{
-		PaddingProp.SetStart( FVector4( InStart.Left, InStart.Top, InStart.Right, InStart.Bottom ) );
+		ColorProp.SetTarget(InTarget);
+		return *this;
+	}
+
+	FBUITweenInstance& FromColor(const FLinearColor& InStart)
+	{
+		ColorProp.SetStart(InStart);
+		return *this;
+	}
+
+	FBUITweenInstance& ToRotation(float InTarget)
+	{
+		RotationProp.SetTarget(InTarget);
+		return *this;
+	}
+
+	FBUITweenInstance& FromRotation(float InStart)
+	{
+		RotationProp.SetStart(InStart);
+		return *this;
+	}
+
+	FBUITweenInstance& ToMaxDesiredHeight(float InTarget)
+	{
+		MaxDesiredHeightProp.SetTarget(InTarget);
+		return *this;
+	}
+
+	FBUITweenInstance& FromMaxDesiredHeight(float InStart)
+	{
+		MaxDesiredHeightProp.SetStart(InStart);
+		return *this;
+	}
+
+	FBUITweenInstance& ToCanvasPosition(FVector2D InTarget)
+	{
+		CanvasPositionProp.SetTarget(InTarget);
+		return *this;
+	}
+
+	FBUITweenInstance& FromCanvasPosition(FVector2D InStart)
+	{
+		CanvasPositionProp.SetStart(InStart);
+		return *this;
+	}
+
+	FBUITweenInstance& ToPadding(const FMargin& InTarget)
+	{
+		PaddingProp.SetTarget(FVector4(InTarget.Left, InTarget.Top, InTarget.Right, InTarget.Bottom));
+		return *this;
+	}
+
+	FBUITweenInstance& FromPadding(const FMargin& InStart)
+	{
+		PaddingProp.SetStart(FVector4(InStart.Left, InStart.Top, InStart.Right, InStart.Bottom));
 		return *this;
 	}
 
 
-	FBUITweenInstance& ToVisibility( ESlateVisibility InTarget )
+	FBUITweenInstance& ToVisibility(ESlateVisibility InTarget)
 	{
-		VisibilityProp.SetTarget( InTarget );
-		return *this;
-	}
-	FBUITweenInstance& FromVisibility( ESlateVisibility InStart )
-	{
-		VisibilityProp.SetStart( InStart );
+		VisibilityProp.SetTarget(InTarget);
 		return *this;
 	}
 
-	FBUITweenInstance& OnStart( const FBUITweenSignature& InOnStart )
+	FBUITweenInstance& FromVisibility(ESlateVisibility InStart)
+	{
+		VisibilityProp.SetStart(InStart);
+		return *this;
+	}
+
+	FBUITweenInstance& OnStart(const FBUITweenSignature& InOnStart)
 	{
 		OnStartedDelegate = InOnStart;
 		return *this;
 	}
-	FBUITweenInstance& OnComplete( const FBUITweenSignature& InOnComplete )
+
+	FBUITweenInstance& OnComplete(const FBUITweenSignature& InOnComplete)
 	{
 		OnCompleteDelegate = InOnComplete;
 		return *this;
@@ -252,11 +277,93 @@ public:
 
 	FBUITweenInstance& ToReset()
 	{
-		ScaleProp.SetTarget( FVector2D::UnitVector );
-		OpacityProp.SetTarget( 1 );
-		TranslationProp.SetTarget( FVector2D::ZeroVector );
-		ColorProp.SetTarget( FLinearColor::White );
-		RotationProp.SetTarget( 0 );
+		ScaleProp.SetTarget(FVector2D::UnitVector);
+		OpacityProp.SetTarget(1);
+		TranslationProp.SetTarget(FVector2D::ZeroVector);
+		ColorProp.SetTarget(FLinearColor::White);
+		RotationProp.SetTarget(0);
+		return *this;
+	}
+
+	FBUITweenInstance& ApplyChangedValues(const FBUITweenValues& FromValues, const FBUITweenValues& ToValues, const FBUITweenValues& InitialValues)
+	{
+		// Apply From Values if they are different from initial values
+		if (FromValues.HasTranslationChange(InitialValues))
+		{
+			FromTranslation(FromValues.Translation);
+		}
+		if (FromValues.HasScaleChange(InitialValues))
+		{
+			FromScale(FromValues.Scale);
+		}
+		if (FromValues.HasOpacityChange(InitialValues))
+		{
+			FromOpacity(FromValues.Opacity);
+		}
+		if (FromValues.HasColorChange(InitialValues))
+		{
+			FromColor(FromValues.Color);
+		}
+		if (FromValues.HasRotationChange(InitialValues))
+		{
+			FromRotation(FromValues.Rotation);
+		}
+		if (FromValues.HasCanvasPositionChange(InitialValues))
+		{
+			FromCanvasPosition(FromValues.CanvasPosition);
+		}
+		if (FromValues.HasPaddingChange(InitialValues))
+		{
+			FromPadding(FromValues.Padding);
+		}
+		if (FromValues.HasVisibilityChange(InitialValues))
+		{
+			FromVisibility(FromValues.Visibility);
+		}
+		if (FromValues.HasMaxDesiredHeightChange(InitialValues))
+		{
+			FromMaxDesiredHeight(FromValues.MaxDesiredHeight);
+		}
+
+		// Apply To Values if they are different from initial values
+		if (ToValues.HasTranslationChange(InitialValues))
+		{
+			ToTranslation(ToValues.Translation);
+		}
+		if (ToValues.HasScaleChange(InitialValues))
+		{
+			ToScale(ToValues.Scale);
+		}
+		if (ToValues.HasOpacityChange(InitialValues))
+		{
+			ToOpacity(ToValues.Opacity);
+		}
+		if (ToValues.HasColorChange(InitialValues))
+		{
+			ToColor(ToValues.Color);
+		}
+		if (ToValues.HasRotationChange(InitialValues))
+		{
+			ToRotation(ToValues.Rotation);
+		}
+		if (ToValues.HasCanvasPositionChange(InitialValues))
+		{
+			ToCanvasPosition(ToValues.CanvasPosition);
+		}
+		if (ToValues.HasPaddingChange(InitialValues))
+		{
+			ToPadding(ToValues.Padding);
+		}
+		if (ToValues.HasVisibilityChange(InitialValues))
+		{
+			ToVisibility(ToValues.Visibility);
+		}
+		if (ToValues.HasMaxDesiredHeightChange(InitialValues))
+		{
+			ToMaxDesiredHeight(ToValues.MaxDesiredHeight);
+		}
+
+
 		return *this;
 	}
 
@@ -264,9 +371,9 @@ public:
 
 	void DoCompleteCleanup()
 	{
-		if ( !bHasPlayedCompleteEvent )
+		if (!bHasPlayedCompleteEvent)
 		{
-			OnCompleteDelegate.ExecuteIfBound( pWidget.Get() );
+			OnCompleteDelegate.ExecuteIfBound(pWidget.Get());
 			bHasPlayedCompleteEvent = true;
 		}
 	}
@@ -299,4 +406,3 @@ protected:
 	bool bHasPlayedStartEvent = false;
 	bool bHasPlayedCompleteEvent = false;
 };
-
