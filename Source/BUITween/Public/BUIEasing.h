@@ -267,18 +267,27 @@ public:
 	{
 		float s;
 		if ( time == 0 ) return 0;
-		time /= duration * 0.5f;
-		if ( time == 2 ) return 1;
+		time /= duration;
+		if ( time == 1 ) return 1;
 		if ( period == 0 ) period = duration * ( 0.3f * 1.5f );
 		if ( overshootOrAmplitude < 1 ) {
 			overshootOrAmplitude = 1;
 			s = period / 4;
 		}
 		else s = period / TWO_PI * ( float ) FMath::Asin( 1 / overshootOrAmplitude );
-		time -= 1;
+
+		time *= 2; // Scale time to 0-2
+
 		if ( time < 1 )
+		{
+			time -= 1;
 			return -0.5f * ( overshootOrAmplitude * ( float ) FMath::Pow( 2, 10 * time ) * ( float ) FMath::Sin( ( time * duration - s ) * TWO_PI / period ) );
-		return overshootOrAmplitude * ( float ) FMath::Pow( 2, -10 * time ) * ( float ) FMath::Sin( ( time * duration - s ) * TWO_PI / period ) * 0.5f + 1;
+		}
+		else
+		{
+			time -= 1; // Adjust for the second half
+			return overshootOrAmplitude * ( float ) FMath::Pow( 2, -10 * time ) * ( float ) FMath::Sin( ( time * duration - s ) * TWO_PI / period ) * 0.5f + 1;
+		}
 	}
 
 	static float InBack( float time, float duration = 1.0f, float overshootOrAmplitude = 0.1f, float period = 1.0f )
@@ -305,4 +314,4 @@ public:
 
 };
 
-#undef TWO_PI
+
