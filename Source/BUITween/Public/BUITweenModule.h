@@ -23,13 +23,13 @@ public:
 	{
 		RETURN_QUICK_DECLARE_CYCLE_STAT( UBUITween, STATGROUP_Tickables );
 	}
-	virtual bool IsTickableWhenPaused() const
+	virtual bool IsTickableWhenPaused() const override
 	{
 		return true;
 	}
-	virtual bool IsTickableInEditor() const
+	virtual bool IsTickableInEditor() const override
 	{
-		return false;
+		return true;
 	}
 
 
